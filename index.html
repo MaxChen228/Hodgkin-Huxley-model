@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hodgkin-Huxley Model Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+      background: #121212;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { text-align: center; margin-bottom: 20px; font-size: 1.4rem; color: #fff; font-weight: 400; letter-spacing: 2px; }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 20px;
+    }
+
+    .chart-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .trace {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 3px;
+      position: relative;
+    }
+    .trace-label {
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      z-index: 10;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .trace canvas { display: block; }
+
+    #trace-I .trace-label { color: #e91e63; }
+    #trace-V .trace-label { color: #4caf50; }
+    #trace-m .trace-label { color: #ff9800; }
+    #trace-h .trace-label { color: #03a9f4; }
+    #trace-n .trace-label { color: #9c27b0; }
+
+    .control-panel {
+      width: 160px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .slider-container {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 3px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .slider-container label { font-size: 11px; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .slider-container .value { font-size: 18px; color: #e91e63; margin-top: 8px; font-weight: 500; }
+
+    #i-slider {
+      writing-mode: vertical-lr;
+      direction: rtl;
+      height: 200px;
+      width: 24px;
+      cursor: pointer;
+      accent-color: #e91e63;
+    }
+
+    .buttons-section {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 3px;
+      padding: 12px;
+    }
+    .buttons-section h3 { font-size: 10px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .magnitude-control { margin-bottom: 10px; }
+    .magnitude-control label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .magnitude-control input { width: calc(100% - 40px); margin-top: 4px; accent-color: #e91e63; vertical-align: middle; }
+    .magnitude-control span { display: inline-block; width: 32px; text-align: right; font-size: 12px; color: #e91e63; vertical-align: middle; }
+    .inject-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .inject-btn {
+      padding: 10px 6px;
+      font-size: 11px;
+      border: 1px solid #333;
+      border-radius: 3px;
+      cursor: pointer;
+      background: #252525;
+      color: #aaa;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .inject-btn:hover { background: #333; color: #fff; border-color: #444; }
+    .inject-btn:active { background: #e91e63; color: #fff; border-color: #e91e63; }
+
+    .playback-section {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 3px;
+      padding: 12px;
+    }
+    .playback-section h3 { font-size: 10px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .playback-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .play-btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #333;
+      border-radius: 3px;
+      cursor: pointer;
+      background: #252525;
+      color: #aaa;
+      transition: all 0.15s;
+    }
+    .play-btn:hover { background: #333; color: #fff; }
+    .play-btn.paused { background: #4caf50; color: #fff; border-color: #4caf50; }
+
+    .speed-control label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .speed-control input { width: 100%; margin-top: 6px; accent-color: #4caf50; }
+    .speed-control .speed-val { text-align: center; font-size: 13px; color: #4caf50; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Hodgkin-Huxley Model</h1>
+
+  <div class="container">
+    <div class="chart-area">
+      <div class="trace" id="trace-I">
+        <span class="trace-label">I(t) [uA/cm²]</span>
+        <canvas id="canvas-I"></canvas>
+      </div>
+      <div class="trace" id="trace-V">
+        <span class="trace-label">V(t) [mV]</span>
+        <canvas id="canvas-V"></canvas>
+      </div>
+      <div class="trace" id="trace-m">
+        <span class="trace-label">m (Na activation)</span>
+        <canvas id="canvas-m"></canvas>
+      </div>
+      <div class="trace" id="trace-h">
+        <span class="trace-label">h (Na inactivation)</span>
+        <canvas id="canvas-h"></canvas>
+      </div>
+      <div class="trace" id="trace-n">
+        <span class="trace-label">n (K activation)</span>
+        <canvas id="canvas-n"></canvas>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="slider-container">
+        <label>Manual I(t)</label>
+        <input type="range" id="i-slider" min="-20" max="50" step="0.5" value="0">
+        <span class="value" id="i-value">0.0</span>
+      </div>
+
+      <div class="buttons-section">
+        <h3>INJECT WAVEFORM</h3>
+        <div class="magnitude-control">
+          <label>Magnitude</label>
+          <input type="range" id="mag-slider" min="1" max="100" step="1" value="10">
+          <span id="mag-value">10</span>
+        </div>
+        <div class="inject-buttons">
+          <button type="button" class="inject-btn" data-wave="step">Step</button>
+          <button type="button" class="inject-btn" data-wave="pulse">Pulse</button>
+          <button type="button" class="inject-btn" data-wave="sine">Sine</button>
+          <button type="button" class="inject-btn" data-wave="ramp">Ramp</button>
+        </div>
+      </div>
+
+      <div class="playback-section">
+        <h3>PLAYBACK</h3>
+        <div class="playback-row">
+          <button class="play-btn paused" id="play-btn">▶</button>
+        </div>
+        <div class="speed-control">
+          <label>Time Window</label>
+          <input type="range" id="window-slider" min="100" max="2000" step="10" value="800">
+          <div class="speed-val" id="window-value">800 pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ========== Hodgkin-Huxley Model ==========
+const HH = {
+  C_m: 1.0,
+  gNa: 120.0, gK: 36.0, gL: 0.3,
+  ENa: 50.0, EK: -77.0, EL: -54.387,
+
+  vtrap(x, y) {
+    return Math.abs(x / y) < 1e-6 ? y * (1 - x / (2 * y)) : x / (1 - Math.exp(-x / y));
+  },
+
+  alpha_n(V) { return 0.01 * this.vtrap(V + 55.0, 10.0); },
+  beta_n(V) { return 0.125 * Math.exp(-(V + 65.0) / 80.0); },
+  alpha_m(V) { return 0.1 * this.vtrap(V + 40.0, 10.0); },
+  beta_m(V) { return 4.0 * Math.exp(-(V + 65.0) / 18.0); },
+  alpha_h(V) { return 0.07 * Math.exp(-(V + 65.0) / 20.0); },
+  beta_h(V) { return 1.0 / (1.0 + Math.exp(-(V + 35.0) / 10.0)); },
+
+  x_inf(alphaFn, betaFn, V) {
+    const a = alphaFn.call(this, V), b = betaFn.call(this, V);
+    return a / (a + b);
+  },
+
+  step(state, I, dt) {
+    const { V, m, h, n } = state;
+
+    const f = (V, m, h, n, I) => {
+      const INa = this.gNa * Math.pow(m, 3) * h * (V - this.ENa);
+      const IK = this.gK * Math.pow(n, 4) * (V - this.EK);
+      const IL = this.gL * (V - this.EL);
+      return {
+        dV: (I - (INa + IK + IL)) / this.C_m,
+        dm: this.alpha_m(V) * (1 - m) - this.beta_m(V) * m,
+        dh: this.alpha_h(V) * (1 - h) - this.beta_h(V) * h,
+        dn: this.alpha_n(V) * (1 - n) - this.beta_n(V) * n
+      };
+    };
+
+    // RK4
+    const k1 = f(V, m, h, n, I);
+    const k2 = f(V + 0.5*dt*k1.dV, m + 0.5*dt*k1.dm, h + 0.5*dt*k1.dh, n + 0.5*dt*k1.dn, I);
+    const k3 = f(V + 0.5*dt*k2.dV, m + 0.5*dt*k2.dm, h + 0.5*dt*k2.dh, n + 0.5*dt*k2.dn, I);
+    const k4 = f(V + dt*k3.dV, m + dt*k3.dm, h + dt*k3.dh, n + dt*k3.dn, I);
+
+    return {
+      V: V + (dt/6) * (k1.dV + 2*k2.dV + 2*k3.dV + k4.dV),
+      m: m + (dt/6) * (k1.dm + 2*k2.dm + 2*k3.dm + k4.dm),
+      h: h + (dt/6) * (k1.dh + 2*k2.dh + 2*k3.dh + k4.dh),
+      n: n + (dt/6) * (k1.dn + 2*k2.dn + 2*k3.dn + k4.dn)
+    };
+  },
+
+  initState(V0 = -65.0) {
+    return {
+      V: V0,
+      m: this.x_inf(this.alpha_m, this.beta_m, V0),
+      h: this.x_inf(this.alpha_h, this.beta_h, V0),
+      n: this.x_inf(this.alpha_n, this.beta_n, V0)
+    };
+  }
+};
+
+// ========== Waveform Injector ==========
+class WaveformInjector {
+  constructor() {
+    this.queue = [];
+  }
+
+  inject(type, mag) {
+    const t0 = simTime;
+    switch (type) {
+      case 'step':
+        this.queue.push({ t0, duration: 30, fn: t => mag });
+        break;
+      case 'pulse':
+        this.queue.push({ t0, duration: 2, fn: t => mag });
+        break;
+      case 'sine':
+        this.queue.push({ t0, duration: 50, fn: t => mag * Math.sin(2 * Math.PI * 0.05 * t) });
+        break;
+      case 'ramp':
+        this.queue.push({ t0, duration: 30, fn: t => (t / 30) * mag });
+        break;
+    }
+  }
+
+  getValue(t) {
+    let sum = 0;
+    this.queue = this.queue.filter(w => {
+      const elapsed = t - w.t0;
+      if (elapsed < 0) return true;
+      if (elapsed > w.duration) return false;
+      sum += w.fn(elapsed);
+      return true;
+    });
+    return sum;
+  }
+}
+
+// ========== Renderer ==========
+class TraceRenderer {
+  constructor(canvasId, color, yMin, yMax) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.color = color;
+    this.yMin = yMin;
+    this.yMax = yMax;
+    this.data = [];
+    this.maxPoints = 800;
+    this.resize();
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const h = 130;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = h * dpr;
+    this.canvas.style.width = rect.width + 'px';
+    this.canvas.style.height = h + 'px';
+    this.ctx.scale(dpr, dpr);
+    this.width = rect.width;
+    this.height = h;
+  }
+
+  push(value) {
+    this.data.push(value);
+    if (this.data.length > this.maxPoints) this.data.shift();
+  }
+
+  draw() {
+    const { ctx, width, height, data, yMin, yMax, color } = this;
+    ctx.fillStyle = '#1e1e1e';
+    ctx.fillRect(0, 0, width, height);
+
+    // Grid
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = (i / 4) * height;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    if (data.length < 2) return;
+
+    // Trace
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const step = width / this.maxPoints;
+    for (let i = 0; i < data.length; i++) {
+      const x = i * step;
+      const y = height - ((data[i] - yMin) / (yMax - yMin)) * height;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#555';
+    ctx.font = '10px monospace';
+    ctx.fillText(yMax.toFixed(0), width - 35, 14);
+    ctx.fillText(yMin.toFixed(0), width - 35, height - 6);
+  }
+}
+
+// ========== Main ==========
+let state = HH.initState();
+let simTime = 0;
+let isPlaying = true;
+let timeWindow = 800; // number of points to display
+let manualI = 0;
+const dt = 0.05; // ms per simulation step
+const STEPS_PER_FRAME = 2; // fixed simulation steps per frame (constant scroll speed)
+const injector = new WaveformInjector();
+
+const traces = {
+  I: new TraceRenderer('canvas-I', '#e91e63', -25, 55),
+  V: new TraceRenderer('canvas-V', '#4caf50', -90, 60),
+  m: new TraceRenderer('canvas-m', '#ff9800', 0, 1),
+  h: new TraceRenderer('canvas-h', '#03a9f4', 0, 1),
+  n: new TraceRenderer('canvas-n', '#9c27b0', 0, 1)
+};
+
+// UI Elements
+const iSlider = document.getElementById('i-slider');
+const iValue = document.getElementById('i-value');
+const playBtn = document.getElementById('play-btn');
+const windowSlider = document.getElementById('window-slider');
+const windowValue = document.getElementById('window-value');
+const magSlider = document.getElementById('mag-slider');
+const magValue = document.getElementById('mag-value');
+
+let injectMag = 10;
+
+iSlider.addEventListener('input', () => {
+  manualI = parseFloat(iSlider.value);
+  iValue.textContent = manualI.toFixed(1);
+});
+
+magSlider.addEventListener('input', () => {
+  injectMag = parseFloat(magSlider.value);
+  magValue.textContent = injectMag.toFixed(0);
+});
+
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playBtn.textContent = isPlaying ? '⏸' : '▶';
+  playBtn.classList.toggle('paused', !isPlaying);
+});
+
+windowSlider.addEventListener('input', () => {
+  timeWindow = parseInt(windowSlider.value);
+  windowValue.textContent = timeWindow + ' pts';
+  // Update all traces' maxPoints
+  Object.values(traces).forEach(t => {
+    t.maxPoints = timeWindow;
+    // Trim data if needed
+    while (t.data.length > timeWindow) t.data.shift();
+  });
+});
+
+document.querySelectorAll('.inject-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    injector.inject(btn.dataset.wave, injectMag);
+  });
+});
+
+// Resize handler
+window.addEventListener('resize', () => {
+  Object.values(traces).forEach(t => t.resize());
+});
+
+// Main loop
+function loop() {
+  requestAnimationFrame(loop);
+
+  if (!isPlaying) return;
+
+  // Fixed steps per frame = constant scroll speed
+  for (let i = 0; i < STEPS_PER_FRAME; i++) {
+    const I_total = manualI + injector.getValue(simTime);
+    state = HH.step(state, I_total, dt);
+    simTime += dt;
+
+    traces.I.push(I_total);
+    traces.V.push(state.V);
+    traces.m.push(state.m);
+    traces.h.push(state.h);
+    traces.n.push(state.n);
+  }
+
+  // Draw all traces
+  Object.values(traces).forEach(t => t.draw());
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
