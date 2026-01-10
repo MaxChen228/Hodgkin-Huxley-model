@@ -81,16 +81,35 @@ def simulate_step(amp, T=400.0, dt=0.025, V0=-65.0, t_on=50.0):
     return ts, V
 
 def firing_rate_from_trace(ts, V, t_start=200.0, thresh=0.0):
-    # Count upward crossings of threshold after t_start (ms)
+    """
+    Calculate firing rate using ISI (inter-spike interval) method.
+    Returns mean frequency from steady-state ISIs for continuous values.
+    """
     mask = ts >= t_start
     t = ts[mask]
     v = V[mask]
 
-    crossings = np.where((v[:-1] < thresh) & (v[1:] >= thresh))[0]
-    n_spikes = len(crossings)
+    # Find spike times (upward threshold crossings)
+    crossing_idx = np.where((v[:-1] < thresh) & (v[1:] >= thresh))[0]
+    n_spikes = len(crossing_idx)
 
-    duration_s = (t[-1] - t[0]) / 1000.0 if len(t) > 1 else 0.0
-    rate_hz = (n_spikes / duration_s) if duration_s > 0 else 0.0
+    if n_spikes < 2:
+        # Not enough spikes for ISI calculation
+        # Fall back to counting method
+        duration_s = (t[-1] - t[0]) / 1000.0 if len(t) > 1 else 0.0
+        rate_hz = (n_spikes / duration_s) if duration_s > 0 else 0.0
+        return rate_hz, n_spikes
+
+    # Get spike times
+    spike_times = t[crossing_idx]
+
+    # Calculate ISIs (inter-spike intervals) in ms
+    isis = np.diff(spike_times)
+
+    # Use mean ISI for frequency (more stable than last ISI)
+    mean_isi_ms = np.mean(isis)
+    rate_hz = 1000.0 / mean_isi_ms  # Convert to Hz
+
     return rate_hz, n_spikes
 
 # ---------- Build f-I curve ----------
@@ -99,8 +118,8 @@ rates = []
 spike_counts = []
 
 for a in tqdm(amps, desc="Scanning I"):
-    ts, V = simulate_step(a, T=400.0, dt=0.025, V0=-65.0, t_on=50.0)
-    r, nsp = firing_rate_from_trace(ts, V, t_start=200.0, thresh=0.0)
+    ts, V = simulate_step(a, T=1000.0, dt=0.01, V0=-65.0, t_on=50.0)
+    r, nsp = firing_rate_from_trace(ts, V, t_start=300.0, thresh=0.0)
     rates.append(r); spike_counts.append(nsp)
 
 rates = np.array(rates)
