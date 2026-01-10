@@ -109,6 +109,7 @@
     }
     .inject-btn:hover { background: #333; color: #fff; border-color: #444; }
     .inject-btn:active { background: #e91e63; color: #fff; border-color: #e91e63; }
+    .inject-btn.active { background: #e91e63; color: #fff; border-color: #e91e63; }
 
     .playback-section {
       background: #1e1e1e;
@@ -197,8 +198,13 @@
         </div>
         <div class="speed-control">
           <label>Time Window</label>
-          <input type="range" id="window-slider" min="100" max="2000" step="10" value="800">
-          <div class="speed-val" id="window-value">800 pts</div>
+          <input type="range" id="window-slider" min="0" max="100" step="1" value="50">
+          <div class="speed-val" id="window-value">1414 pts</div>
+        </div>
+        <div class="speed-control">
+          <label>Speed</label>
+          <input type="range" id="speed-slider" min="1" max="20" step="1" value="2">
+          <div class="speed-val" id="speed-value">2 steps/f</div>
         </div>
       </div>
     </div>
@@ -270,14 +276,19 @@ const HH = {
 class WaveformInjector {
   constructor() {
     this.queue = [];
+    this.stepActive = false;
+    this.stepMag = 0;
+  }
+
+  toggleStep(mag) {
+    this.stepActive = !this.stepActive;
+    this.stepMag = this.stepActive ? mag : 0;
+    return this.stepActive;
   }
 
   inject(type, mag) {
     const t0 = simTime;
     switch (type) {
-      case 'step':
-        this.queue.push({ t0, duration: 30, fn: t => mag });
-        break;
       case 'pulse':
         this.queue.push({ t0, duration: 2, fn: t => mag });
         break;
@@ -291,7 +302,7 @@ class WaveformInjector {
   }
 
   getValue(t) {
-    let sum = 0;
+    let sum = this.stepMag; // Add step if active
     this.queue = this.queue.filter(w => {
       const elapsed = t - w.t0;
       if (elapsed < 0) return true;
@@ -377,10 +388,10 @@ class TraceRenderer {
 let state = HH.initState();
 let simTime = 0;
 let isPlaying = true;
-let timeWindow = 800; // number of points to display
+let timeWindow = 548; // number of points to display (will be set by slider init)
 let manualI = 0;
 const dt = 0.05; // ms per simulation step
-const STEPS_PER_FRAME = 2; // fixed simulation steps per frame (constant scroll speed)
+let stepsPerFrame = 2; // simulation steps per frame
 const injector = new WaveformInjector();
 
 const traces = {
@@ -397,6 +408,8 @@ const iValue = document.getElementById('i-value');
 const playBtn = document.getElementById('play-btn');
 const windowSlider = document.getElementById('window-slider');
 const windowValue = document.getElementById('window-value');
+const speedSlider = document.getElementById('speed-slider');
+const speedValue = document.getElementById('speed-value');
 const magSlider = document.getElementById('mag-slider');
 const magValue = document.getElementById('mag-value');
 
@@ -418,8 +431,12 @@ playBtn.addEventListener('click', () => {
   playBtn.classList.toggle('paused', !isPlaying);
 });
 
+const WINDOW_MIN = 100, WINDOW_MAX = 20000;
+function sliderToWindow(val) {
+  return Math.round(WINDOW_MIN * Math.pow(WINDOW_MAX / WINDOW_MIN, val / 100));
+}
 windowSlider.addEventListener('input', () => {
-  timeWindow = parseInt(windowSlider.value);
+  timeWindow = sliderToWindow(parseInt(windowSlider.value));
   windowValue.textContent = timeWindow + ' pts';
   // Update all traces' maxPoints
   Object.values(traces).forEach(t => {
@@ -428,10 +445,22 @@ windowSlider.addEventListener('input', () => {
     while (t.data.length > timeWindow) t.data.shift();
   });
 });
+timeWindow = sliderToWindow(50);
+
+speedSlider.addEventListener('input', () => {
+  stepsPerFrame = parseInt(speedSlider.value);
+  speedValue.textContent = stepsPerFrame + ' steps/f';
+});
 
 document.querySelectorAll('.inject-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    injector.inject(btn.dataset.wave, injectMag);
+    const wave = btn.dataset.wave;
+    if (wave === 'step') {
+      const active = injector.toggleStep(injectMag);
+      btn.classList.toggle('active', active);
+    } else {
+      injector.inject(wave, injectMag);
+    }
   });
 });
 
@@ -446,8 +475,8 @@ function loop() {
 
   if (!isPlaying) return;
 
-  // Fixed steps per frame = constant scroll speed
-  for (let i = 0; i < STEPS_PER_FRAME; i++) {
+  // Steps per frame controls scroll speed
+  for (let i = 0; i < stepsPerFrame; i++) {
     const I_total = manualI + injector.getValue(simTime);
     state = HH.step(state, I_total, dt);
     simTime += dt;
