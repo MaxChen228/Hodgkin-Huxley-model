@@ -119,79 +119,140 @@ def firing_rate_from_trace(ts, V, t_start=200.0, thresh=0.0):
 # ---------- Build f-I curves with different AC backgrounds ----------
 import os
 import json
+import shutil
 
 amps_dc = np.arange(0.0, 50.0 + 1e-9, 0.05)  # uA/cm^2 (1000 points)
 ac_amplitudes = np.array([10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0])  # 11 curves
 frequencies = [20, 40, 60, 80, 100]  # Hz
+SAVE_EVERY = 10  # Save checkpoint every N DC points
 
+# ========== Google Drive Setup (Colab) ==========
+USE_DRIVE = False
+DRIVE_DIR = '/content/drive/MyDrive/HH_results'
+
+try:
+    from google.colab import drive
+    drive.mount('/content/drive')
+    os.makedirs(DRIVE_DIR, exist_ok=True)
+    USE_DRIVE = True
+    print(f"Google Drive mounted. Results will sync to: {DRIVE_DIR}")
+except:
+    print("Not on Colab or Drive not available. Using local storage only.")
+
+def sync_to_drive(local_path):
+    """Copy file to Google Drive for persistence"""
+    if USE_DRIVE and os.path.exists(local_path):
+        shutil.copy2(local_path, DRIVE_DIR)
+
+# ========== Checkpoint System ==========
 CHECKPOINT_FILE = 'checkpoint.json'
 PARTIAL_DIR = 'partial_results'
 os.makedirs(PARTIAL_DIR, exist_ok=True)
 
 def load_checkpoint():
+    # Try loading from Drive first
+    if USE_DRIVE:
+        drive_ckpt = f"{DRIVE_DIR}/checkpoint.json"
+        if os.path.exists(drive_ckpt):
+            shutil.copy2(drive_ckpt, CHECKPOINT_FILE)
+            print("Restored checkpoint from Drive")
+        # Restore partial results from Drive
+        drive_partial = f"{DRIVE_DIR}/partial_results"
+        if os.path.exists(drive_partial):
+            for f in os.listdir(drive_partial):
+                src = f"{drive_partial}/{f}"
+                dst = f"{PARTIAL_DIR}/{f}"
+                if not os.path.exists(dst):
+                    shutil.copy2(src, dst)
+            print("Restored partial results from Drive")
+
     if os.path.exists(CHECKPOINT_FILE):
         with open(CHECKPOINT_FILE, 'r') as f:
             return json.load(f)
-    return {'completed': []}
+    return {'completed': [], 'progress': {}}
 
-def save_checkpoint(completed):
+def save_checkpoint(ckpt):
     with open(CHECKPOINT_FILE, 'w') as f:
-        json.dump({'completed': completed}, f)
+        json.dump(ckpt, f)
+    sync_to_drive(CHECKPOINT_FILE)
 
-def is_completed(freq, ac_idx, checkpoint):
-    return f"{freq}_{ac_idx}" in checkpoint['completed']
+def get_progress_key(freq, ac_idx):
+    return f"{freq}_{ac_idx}"
 
-def mark_completed(freq, ac_idx, checkpoint):
-    key = f"{freq}_{ac_idx}"
-    if key not in checkpoint['completed']:
-        checkpoint['completed'].append(key)
-    save_checkpoint(checkpoint['completed'])
-
-def load_partial(freq):
-    path = f"{PARTIAL_DIR}/partial_{freq}Hz.npz"
+def load_partial(freq, ac_idx):
+    """Load partial DC progress for a specific (freq, ac) pair"""
+    path = f"{PARTIAL_DIR}/partial_{freq}Hz_ac{ac_idx}.npz"
     if os.path.exists(path):
         d = np.load(path)
-        return {k: d[k] for k in d.files}
-    return {}
+        return d['rates'].tolist(), int(d['dc_idx'])
+    return [], 0
 
-def save_partial(freq, results_dict):
-    np.savez(f"{PARTIAL_DIR}/partial_{freq}Hz.npz", **results_dict)
+def save_partial_dc(freq, ac_idx, rates, dc_idx):
+    """Save partial DC progress"""
+    path = f"{PARTIAL_DIR}/partial_{freq}Hz_ac{ac_idx}.npz"
+    np.savez(path, rates=np.array(rates), dc_idx=dc_idx)
+    sync_to_drive(path)
+    # Also sync to Drive partial dir
+    if USE_DRIVE:
+        drive_partial = f"{DRIVE_DIR}/partial_results"
+        os.makedirs(drive_partial, exist_ok=True)
+        shutil.copy2(path, f"{drive_partial}/partial_{freq}Hz_ac{ac_idx}.npz")
+
+def save_final(freq, results):
+    """Save final results for a frequency"""
+    data = {'amps_dc': amps_dc, 'ac_amplitudes': ac_amplitudes, 'freq_ac': freq}
+    for i, amp_ac in enumerate(ac_amplitudes):
+        data[f'rates_{i}'] = results[amp_ac]
+    path = f'f_I_data_{freq}Hz.npz'
+    np.savez(path, **data)
+    sync_to_drive(path)
 
 checkpoint = load_checkpoint()
-print(f"Checkpoint loaded: {len(checkpoint['completed'])} tasks completed")
+print(f"Checkpoint: {len(checkpoint['completed'])} curves done, {len(checkpoint.get('progress', {}))} in progress")
 
 for freq_ac in frequencies:
     print(f"\n=== Processing {freq_ac}Hz ===")
-
-    # Load partial results if exist
-    partial = load_partial(freq_ac)
     results = {}
 
     for i, amp_ac in enumerate(ac_amplitudes):
-        # Skip if already completed
-        if is_completed(freq_ac, i, checkpoint):
-            print(f"  AC={amp_ac:.3g}: skipped (cached)")
-            results[amp_ac] = partial.get(f'rates_{i}', np.zeros(len(amps_dc)))
-            continue
+        key = get_progress_key(freq_ac, i)
 
-        rates = []
-        for a in tqdm(amps_dc, desc=f"AC={amp_ac:.3g}"):
+        # Skip if fully completed
+        if key in checkpoint['completed']:
+            # Load completed data
+            rates, _ = load_partial(freq_ac, i)
+            if len(rates) == len(amps_dc):
+                print(f"  AC={amp_ac:.3g}: skipped (done)")
+                results[amp_ac] = np.array(rates)
+                continue
+
+        # Load partial progress or start fresh
+        rates, start_idx = load_partial(freq_ac, i)
+        if start_idx > 0:
+            print(f"  AC={amp_ac:.3g}: resuming from DC[{start_idx}]")
+
+        # Continue from where we left off
+        for j in tqdm(range(start_idx, len(amps_dc)), desc=f"AC={amp_ac:.3g}", initial=start_idx, total=len(amps_dc)):
+            a = amps_dc[j]
             ts, V = simulate_step(a, amp_ac=amp_ac, freq_ac=freq_ac, T=1000.0, dt=0.01, V0=-65.0, t_on=50.0)
             r, _ = firing_rate_from_trace(ts, V, t_start=300.0, thresh=0.0)
             rates.append(r)
-        results[amp_ac] = np.array(rates)
 
-        # Save partial result immediately
-        partial[f'rates_{i}'] = results[amp_ac]
-        save_partial(freq_ac, partial)
-        mark_completed(freq_ac, i, checkpoint)
-        print(f"  AC={amp_ac:.3g}: done & saved")
+            # Save every SAVE_EVERY points
+            if (j + 1) % SAVE_EVERY == 0:
+                save_partial_dc(freq_ac, i, rates, j + 1)
+
+        # Mark as completed
+        results[amp_ac] = np.array(rates)
+        save_partial_dc(freq_ac, i, rates, len(amps_dc))
+        if key not in checkpoint['completed']:
+            checkpoint['completed'].append(key)
+        checkpoint['progress'].pop(key, None)
+        save_checkpoint(checkpoint)
+        print(f"  AC={amp_ac:.3g}: done")
 
     # Save final data for this frequency
-    data = {'amps_dc': amps_dc, 'ac_amplitudes': ac_amplitudes, 'freq_ac': freq_ac}
-    for i, amp_ac in enumerate(ac_amplitudes):
-        data[f'rates_{i}'] = results[amp_ac]
-    np.savez(f'f_I_data_{freq_ac}Hz.npz', **data)
+    save_final(freq_ac, results)
     print(f"Saved: f_I_data_{freq_ac}Hz.npz")
 
     # Plot
@@ -207,8 +268,10 @@ for freq_ac in frequencies:
     plt.legend(loc='upper left', ncol=2, fontsize=8, title="AC (µA/cm²)")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'f_I_curve_{freq_ac}Hz.png', dpi=150)
+    fig_path = f'f_I_curve_{freq_ac}Hz.png'
+    plt.savefig(fig_path, dpi=150)
+    sync_to_drive(fig_path)
     plt.close()
-    print(f"Saved: f_I_curve_{freq_ac}Hz.png")
+    print(f"Saved: {fig_path}")
 
 print("\n=== All done! ===")
