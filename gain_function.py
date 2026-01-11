@@ -41,12 +41,16 @@ def x_inf(alpha, beta, V):
     a = alpha(V); b = beta(V)
     return a/(a+b)
 
-# ---------- Stimulus: step current (current clamp) ----------
-def I_step(t_ms, amp=10.0, t_on=50.0, t_off=400.0):
-    return amp if (t_on <= t_ms < t_off) else 0.0
+# ---------- Stimulus: DC + AC current (current clamp) ----------
+def I_stim(t_ms, amp_dc=10.0, amp_ac=0.0, freq_ac=80.0, t_on=50.0, t_off=400.0):
+    """DC step + AC sinusoidal background"""
+    if t_on <= t_ms < t_off:
+        ac = amp_ac * np.sin(2 * np.pi * freq_ac * t_ms / 1000.0)  # t_ms -> seconds
+        return amp_dc + ac
+    return 0.0
 
 # ---------- RK4 solver ----------
-def simulate_step(amp, T=400.0, dt=0.025, V0=-65.0, t_on=50.0):
+def simulate_step(amp_dc, amp_ac=0.0, freq_ac=80.0, T=400.0, dt=0.025, V0=-65.0, t_on=50.0):
     ts = np.arange(0.0, T+dt, dt)
     V  = np.zeros_like(ts)
     m  = np.zeros_like(ts)
@@ -60,7 +64,7 @@ def simulate_step(amp, T=400.0, dt=0.025, V0=-65.0, t_on=50.0):
 
     def f(state, t):
         Vv, mm, hh, nn = state
-        I = I_step(t, amp=amp, t_on=t_on, t_off=T)
+        I = I_stim(t, amp_dc=amp_dc, amp_ac=amp_ac, freq_ac=freq_ac, t_on=t_on, t_off=T)
         ina, ik, il = currents(Vv, mm, hh, nn)
         dV = (I - (ina + ik + il)) / C_m
         dm = dm_dt(Vv, mm)
@@ -112,35 +116,99 @@ def firing_rate_from_trace(ts, V, t_start=200.0, thresh=0.0):
 
     return rate_hz, n_spikes
 
-# ---------- Build f-I curve ----------
-amps = np.arange(0.0, 50.0 + 1e-9, 0.1)  # uA/cm^2 (500 points)
-rates = []
-spike_counts = []
+# ---------- Build f-I curves with different AC backgrounds ----------
+import os
+import json
 
-for a in tqdm(amps, desc="Scanning I"):
-    ts, V = simulate_step(a, T=1000.0, dt=0.01, V0=-65.0, t_on=50.0)
-    r, nsp = firing_rate_from_trace(ts, V, t_start=300.0, thresh=0.0)
-    rates.append(r); spike_counts.append(nsp)
+amps_dc = np.arange(0.0, 50.0 + 1e-9, 0.05)  # uA/cm^2 (1000 points)
+ac_amplitudes = np.array([10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0])  # 11 curves
+frequencies = [20, 40, 60, 80, 100]  # Hz
 
-rates = np.array(rates)
-spike_counts = np.array(spike_counts)
+CHECKPOINT_FILE = 'checkpoint.json'
+PARTIAL_DIR = 'partial_results'
+os.makedirs(PARTIAL_DIR, exist_ok=True)
 
-# Estimate rheobase as first amp with at least 1 spike in measurement window
-idx = np.where(spike_counts > 0)[0]
-rheobase = amps[idx[0]] if len(idx) else None
+def load_checkpoint():
+    if os.path.exists(CHECKPOINT_FILE):
+        with open(CHECKPOINT_FILE, 'r') as f:
+            return json.load(f)
+    return {'completed': []}
 
-# ---------- Plot ----------
-plt.figure(figsize=(7,4.5))
-plt.plot(amps, rates, linewidth=1.2)
-plt.xlabel("Step current amplitude I (µA/cm²)")
-plt.ylabel("Firing rate (Hz)")
-plt.title("HH model f-I curve (step current clamp)")
-plt.grid(True, alpha=0.3)
-if rheobase is not None:
-    plt.axvline(rheobase, linestyle='--')
-    plt.text(rheobase+0.2, max(rates)*0.1, f"rheobase≈{rheobase:.1f}", rotation=90, va='bottom')
-plt.tight_layout()
-plt.savefig('f_I_curve.png', dpi=150)
-print(f"Saved: f_I_curve.png")
-print(f"Rheobase ≈ {rheobase:.1f} µA/cm²" if rheobase else "No spikes detected")
-print(f"Max firing rate: {rates.max():.1f} Hz")
+def save_checkpoint(completed):
+    with open(CHECKPOINT_FILE, 'w') as f:
+        json.dump({'completed': completed}, f)
+
+def is_completed(freq, ac_idx, checkpoint):
+    return f"{freq}_{ac_idx}" in checkpoint['completed']
+
+def mark_completed(freq, ac_idx, checkpoint):
+    key = f"{freq}_{ac_idx}"
+    if key not in checkpoint['completed']:
+        checkpoint['completed'].append(key)
+    save_checkpoint(checkpoint['completed'])
+
+def load_partial(freq):
+    path = f"{PARTIAL_DIR}/partial_{freq}Hz.npz"
+    if os.path.exists(path):
+        d = np.load(path)
+        return {k: d[k] for k in d.files}
+    return {}
+
+def save_partial(freq, results_dict):
+    np.savez(f"{PARTIAL_DIR}/partial_{freq}Hz.npz", **results_dict)
+
+checkpoint = load_checkpoint()
+print(f"Checkpoint loaded: {len(checkpoint['completed'])} tasks completed")
+
+for freq_ac in frequencies:
+    print(f"\n=== Processing {freq_ac}Hz ===")
+
+    # Load partial results if exist
+    partial = load_partial(freq_ac)
+    results = {}
+
+    for i, amp_ac in enumerate(ac_amplitudes):
+        # Skip if already completed
+        if is_completed(freq_ac, i, checkpoint):
+            print(f"  AC={amp_ac:.3g}: skipped (cached)")
+            results[amp_ac] = partial.get(f'rates_{i}', np.zeros(len(amps_dc)))
+            continue
+
+        rates = []
+        for a in tqdm(amps_dc, desc=f"AC={amp_ac:.3g}"):
+            ts, V = simulate_step(a, amp_ac=amp_ac, freq_ac=freq_ac, T=1000.0, dt=0.01, V0=-65.0, t_on=50.0)
+            r, _ = firing_rate_from_trace(ts, V, t_start=300.0, thresh=0.0)
+            rates.append(r)
+        results[amp_ac] = np.array(rates)
+
+        # Save partial result immediately
+        partial[f'rates_{i}'] = results[amp_ac]
+        save_partial(freq_ac, partial)
+        mark_completed(freq_ac, i, checkpoint)
+        print(f"  AC={amp_ac:.3g}: done & saved")
+
+    # Save final data for this frequency
+    data = {'amps_dc': amps_dc, 'ac_amplitudes': ac_amplitudes, 'freq_ac': freq_ac}
+    for i, amp_ac in enumerate(ac_amplitudes):
+        data[f'rates_{i}'] = results[amp_ac]
+    np.savez(f'f_I_data_{freq_ac}Hz.npz', **data)
+    print(f"Saved: f_I_data_{freq_ac}Hz.npz")
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    cmap = plt.cm.viridis(np.linspace(0, 1, len(ac_amplitudes)))
+    for i, amp_ac in enumerate(ac_amplitudes):
+        label = f"{amp_ac:.3g}" if amp_ac > 0 else "0"
+        plt.plot(amps_dc, results[amp_ac], linewidth=1, color=cmap[i], label=label)
+
+    plt.xlabel("DC current amplitude (µA/cm²)")
+    plt.ylabel("Firing rate (Hz)")
+    plt.title(f"HH model f-I curve with {freq_ac}Hz AC background")
+    plt.legend(loc='upper left', ncol=2, fontsize=8, title="AC (µA/cm²)")
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(f'f_I_curve_{freq_ac}Hz.png', dpi=150)
+    plt.close()
+    print(f"Saved: f_I_curve_{freq_ac}Hz.png")
+
+print("\n=== All done! ===")
