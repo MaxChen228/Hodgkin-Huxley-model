@@ -11,40 +11,55 @@
       background: #121212;
       color: #e0e0e0;
       min-height: 100vh;
-      padding: 20px;
-    }
-    h1 { text-align: center; margin-bottom: 20px; font-size: 1.4rem; color: #fff; font-weight: 400; letter-spacing: 2px; }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
       display: flex;
-      gap: 20px;
+      flex-direction: column;
+    }
+    h1 { text-align: center; padding: 16px; font-size: 1.3rem; color: #fff; font-weight: 400; letter-spacing: 2px; background: #1a1a1a; }
+
+    .main-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .top-section {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      padding: 12px;
+      gap: 12px;
     }
 
     .chart-area {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
+      min-width: 0;
     }
 
     .trace {
+      height: 80px;
+      flex-shrink: 0;
       background: #1e1e1e;
       border: 1px solid #2a2a2a;
       border-radius: 3px;
       position: relative;
     }
+    .trace#trace-V {
+      height: 120px;
+    }
     .trace-label {
       position: absolute;
-      top: 6px;
-      left: 10px;
-      font-size: 11px;
+      top: 4px;
+      left: 8px;
+      font-size: 10px;
       font-weight: 500;
       z-index: 10;
       text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     }
-    .trace canvas { display: block; }
+    .trace canvas { display: block; width: 100%; height: 100%; }
 
     #trace-I .trace-label { color: #e91e63; }
     #trace-V .trace-label { color: #4caf50; }
@@ -52,103 +67,52 @@
     #trace-h .trace-label { color: #03a9f4; }
     #trace-n .trace-label { color: #9c27b0; }
 
+    /* Right Control Panel */
     .control-panel {
-      width: 160px;
+      width: 140px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
-    .slider-container {
+    .panel-section {
       background: #1e1e1e;
       border: 1px solid #2a2a2a;
       border-radius: 3px;
-      padding: 12px;
+      padding: 10px;
+    }
+    .panel-section h3 {
+      font-size: 9px;
+      color: #666;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .manual-slider {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    .slider-container label { font-size: 11px; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .slider-container .value { font-size: 18px; color: #e91e63; margin-top: 8px; font-weight: 500; }
-
-    #i-slider {
+    .manual-slider input[type="range"] {
       writing-mode: vertical-lr;
       direction: rtl;
-      height: 200px;
-      width: 24px;
+      height: 120px;
+      width: 20px;
       cursor: pointer;
       accent-color: #e91e63;
     }
+    .manual-slider .value {
+      font-size: 16px;
+      color: #e91e63;
+      margin-top: 6px;
+      font-weight: 500;
+    }
 
-    .buttons-section {
-      background: #1e1e1e;
-      border: 1px solid #2a2a2a;
-      border-radius: 3px;
-      padding: 12px;
-    }
-    .buttons-section h3 { font-size: 10px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-    .magnitude-control { margin-bottom: 10px; }
-    .magnitude-control label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .magnitude-control input { width: calc(100% - 40px); margin-top: 4px; accent-color: #e91e63; vertical-align: middle; }
-    .magnitude-control span { display: inline-block; width: 32px; text-align: right; font-size: 12px; color: #e91e63; vertical-align: middle; }
-    .inject-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-    .inject-btn {
-      padding: 10px 6px;
-      font-size: 11px;
-      border: 1px solid #333;
-      border-radius: 3px;
-      cursor: pointer;
-      background: #252525;
-      color: #aaa;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-    .inject-btn:hover { background: #333; color: #fff; border-color: #444; }
-    .inject-btn:active { background: #e91e63; color: #fff; border-color: #e91e63; }
-    .inject-btn.active { background: #e91e63; color: #fff; border-color: #e91e63; }
-    .inject-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
-
-    .templates-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #2a2a2a; }
-    .templates-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .templates-header h4 { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
-    .clear-template-btn {
-      padding: 3px 8px; font-size: 9px; border: 1px solid #333; border-radius: 3px;
-      background: #252525; color: #666; cursor: pointer; font-family: inherit;
-    }
-    .clear-template-btn:hover { background: #333; color: #aaa; }
-    .clear-template-btn.active { background: #e91e63; color: #fff; border-color: #e91e63; }
-
-    .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .template-card {
-      display: flex; flex-direction: column; align-items: center; padding: 6px;
-      background: #252525; border: 1px solid #333; border-radius: 3px; cursor: pointer;
-      transition: all 0.15s;
-    }
-    .template-card:hover { background: #333; border-color: #444; }
-    .template-card.active { background: #e91e63; border-color: #e91e63; }
-    .template-card.active span { color: #fff; }
-    .template-preview { display: block; margin-bottom: 4px; border-radius: 2px; }
-    .template-card span { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .playback-section {
-      background: #1e1e1e;
-      border: 1px solid #2a2a2a;
-      border-radius: 3px;
-      padding: 12px;
-    }
-    .playback-section h3 { font-size: 10px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-    .playback-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
     .play-btn {
-      flex: 1;
-      padding: 12px;
+      width: 100%;
+      padding: 10px;
       font-size: 14px;
       border: 1px solid #333;
       border-radius: 3px;
@@ -158,109 +122,232 @@
       transition: all 0.15s;
     }
     .play-btn:hover { background: #333; color: #fff; }
-    .play-btn.paused { background: #4caf50; color: #fff; border-color: #4caf50; }
+    .play-btn.playing { background: #4caf50; color: #fff; border-color: #4caf50; }
 
-    .speed-control label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .speed-control input { width: 100%; margin-top: 6px; accent-color: #4caf50; }
-    .speed-control .speed-val { text-align: center; font-size: 13px; color: #4caf50; margin-top: 4px; }
+    .param-row {
+      margin-bottom: 8px;
+    }
+    .param-row:last-child { margin-bottom: 0; }
+    .param-row label {
+      display: block;
+      font-size: 9px;
+      color: #666;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+    .param-row input[type="range"] {
+      width: 100%;
+      accent-color: #4caf50;
+    }
+    .param-row .val {
+      font-size: 11px;
+      color: #4caf50;
+      text-align: center;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Bottom Template Section */
+    .template-section {
+      background: #1a1a1a;
+      border-top: 1px solid #2a2a2a;
+      padding: 12px;
+    }
+    .template-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .template-header h2 {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 500;
+    }
+    .template-off-btn {
+      padding: 4px 12px;
+      font-size: 10px;
+      border: 1px solid #444;
+      border-radius: 3px;
+      background: #252525;
+      color: #888;
+      cursor: pointer;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .template-off-btn:hover { background: #333; color: #fff; }
+    .template-off-btn.active { background: #e91e63; color: #fff; border-color: #e91e63; }
+
+    .template-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scroll-behavior: smooth;
+    }
+    .template-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+    .template-scroll::-webkit-scrollbar-track {
+      background: #252525;
+      border-radius: 3px;
+    }
+    .template-scroll::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 3px;
+    }
+    .template-scroll::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .template-card {
+      flex-shrink: 0;
+      width: 360px;
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 14px;
+      transition: all 0.15s;
+    }
+    .template-card:hover { border-color: #444; }
+    .template-card.active {
+      border-color: #e91e63;
+      box-shadow: 0 0 0 1px #e91e63;
+    }
+
+    .template-card .preview-canvas {
+      width: 100%;
+      height: 55px;
+      background: #1e1e1e;
+      border-radius: 3px;
+      margin-bottom: 10px;
+    }
+    .template-card .name {
+      font-size: 13px;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    .template-card.active .name { color: #e91e63; }
+
+    .template-card .params {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .template-card .param {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .template-card .param label {
+      font-size: 10px;
+      color: #888;
+      width: 65px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    .template-card .param input[type="range"] {
+      flex: 1;
+      height: 6px;
+      accent-color: #e91e63;
+    }
+    .template-card .param .val {
+      font-size: 11px;
+      color: #e91e63;
+      width: 32px;
+      text-align: right;
+    }
+
+    .template-card .activate-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 11px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #333;
+      color: #aaa;
+      cursor: pointer;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    .template-card .activate-btn:hover { background: #444; color: #fff; }
+    .template-card.active .activate-btn {
+      background: #e91e63;
+      color: #fff;
+      border-color: #e91e63;
+    }
   </style>
 </head>
 <body>
   <h1>Hodgkin-Huxley Model</h1>
 
-  <div class="container">
-    <div class="chart-area">
-      <div class="trace" id="trace-I">
-        <span class="trace-label">I(t) [uA/cm²]</span>
-        <canvas id="canvas-I"></canvas>
+  <div class="main-container">
+    <div class="top-section">
+      <div class="chart-area">
+        <div class="trace" id="trace-I">
+          <span class="trace-label">I(t) [μA/cm²]</span>
+          <canvas id="canvas-I"></canvas>
+        </div>
+        <div class="trace" id="trace-V">
+          <span class="trace-label">V(t) [mV]</span>
+          <canvas id="canvas-V"></canvas>
+        </div>
+        <div class="trace" id="trace-m">
+          <span class="trace-label">m (Na⁺ activation)</span>
+          <canvas id="canvas-m"></canvas>
+        </div>
+        <div class="trace" id="trace-h">
+          <span class="trace-label">h (Na⁺ inactivation)</span>
+          <canvas id="canvas-h"></canvas>
+        </div>
+        <div class="trace" id="trace-n">
+          <span class="trace-label">n (K⁺ activation)</span>
+          <canvas id="canvas-n"></canvas>
+        </div>
       </div>
-      <div class="trace" id="trace-V">
-        <span class="trace-label">V(t) [mV]</span>
-        <canvas id="canvas-V"></canvas>
-      </div>
-      <div class="trace" id="trace-m">
-        <span class="trace-label">m (Na activation)</span>
-        <canvas id="canvas-m"></canvas>
-      </div>
-      <div class="trace" id="trace-h">
-        <span class="trace-label">h (Na inactivation)</span>
-        <canvas id="canvas-h"></canvas>
-      </div>
-      <div class="trace" id="trace-n">
-        <span class="trace-label">n (K activation)</span>
-        <canvas id="canvas-n"></canvas>
+
+      <div class="control-panel">
+        <div class="panel-section">
+          <h3>Manual I(t)</h3>
+          <div class="manual-slider">
+            <input type="range" id="i-slider" min="-20" max="80" step="0.5" value="0">
+            <span class="value" id="i-value">0.0</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>Playback</h3>
+          <button class="play-btn playing" id="play-btn">⏸</button>
+          <div class="param-row" style="margin-top:10px">
+            <label>Time Window</label>
+            <input type="range" id="window-slider" min="0" max="100" step="1" value="50">
+            <span class="val" id="window-value">1414</span>
+          </div>
+          <div class="param-row">
+            <label>Speed</label>
+            <input type="range" id="speed-slider" min="1" max="20" step="1" value="2">
+            <span class="val" id="speed-value">2</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="control-panel">
-      <div class="slider-container">
-        <label>Manual I(t)</label>
-        <input type="range" id="i-slider" min="-20" max="50" step="0.5" value="0">
-        <span class="value" id="i-value">0.0</span>
+    <div class="template-section">
+      <div class="template-header">
+        <h2>Waveform Templates</h2>
+        <button class="template-off-btn" id="template-off">OFF</button>
       </div>
-
-      <div class="buttons-section">
-        <h3>INJECT WAVEFORM</h3>
-        <div class="magnitude-control">
-          <label>Magnitude</label>
-          <input type="range" id="mag-slider" min="1" max="100" step="1" value="10">
-          <span id="mag-value">10</span>
-        </div>
-        <div class="inject-buttons" id="inject-buttons">
-          <button type="button" class="inject-btn" data-wave="step">Step</button>
-          <button type="button" class="inject-btn" data-wave="pulse">Pulse</button>
-          <button type="button" class="inject-btn" data-wave="sine">Sine</button>
-          <button type="button" class="inject-btn" data-wave="ramp">Ramp</button>
-        </div>
-        <div class="templates-section">
-          <div class="templates-header">
-            <h4>TEMPLATES</h4>
-            <button type="button" class="clear-template-btn" id="clear-template">OFF</button>
-          </div>
-          <div class="template-grid">
-            <div class="template-card" data-template="staircase">
-              <canvas class="template-preview" width="60" height="30"></canvas>
-              <span>Staircase</span>
-            </div>
-            <div class="template-card" data-template="paired">
-              <canvas class="template-preview" width="60" height="30"></canvas>
-              <span>Paired</span>
-            </div>
-            <div class="template-card" data-template="burst">
-              <canvas class="template-preview" width="60" height="30"></canvas>
-              <span>Burst</span>
-            </div>
-            <div class="template-card" data-template="ramp-hold">
-              <canvas class="template-preview" width="60" height="30"></canvas>
-              <span>Ramp+Hold</span>
-            </div>
-            <div class="template-card" data-template="sine-burst">
-              <canvas class="template-preview" width="60" height="30"></canvas>
-              <span>Sine Burst</span>
-            </div>
-            <div class="template-card" data-template="noise">
-              <canvas class="template-preview" width="60" height="30"></canvas>
-              <span>Noise</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="playback-section">
-        <h3>PLAYBACK</h3>
-        <div class="playback-row">
-          <button class="play-btn paused" id="play-btn">▶</button>
-        </div>
-        <div class="speed-control">
-          <label>Time Window</label>
-          <input type="range" id="window-slider" min="0" max="100" step="1" value="50">
-          <div class="speed-val" id="window-value">1414 pts</div>
-        </div>
-        <div class="speed-control">
-          <label>Speed</label>
-          <input type="range" id="speed-slider" min="1" max="20" step="1" value="2">
-          <div class="speed-val" id="speed-value">2 steps/f</div>
-        </div>
+      <div class="template-scroll" id="template-scroll">
+        <!-- Templates will be generated by JS -->
       </div>
     </div>
   </div>
@@ -290,7 +377,6 @@ const HH = {
 
   step(state, I, dt) {
     const { V, m, h, n } = state;
-
     const f = (V, m, h, n, I) => {
       const INa = this.gNa * Math.pow(m, 3) * h * (V - this.ENa);
       const IK = this.gK * Math.pow(n, 4) * (V - this.EK);
@@ -302,13 +388,10 @@ const HH = {
         dn: this.alpha_n(V) * (1 - n) - this.beta_n(V) * n
       };
     };
-
-    // RK4
     const k1 = f(V, m, h, n, I);
     const k2 = f(V + 0.5*dt*k1.dV, m + 0.5*dt*k1.dm, h + 0.5*dt*k1.dh, n + 0.5*dt*k1.dn, I);
     const k3 = f(V + 0.5*dt*k2.dV, m + 0.5*dt*k2.dm, h + 0.5*dt*k2.dh, n + 0.5*dt*k2.dn, I);
     const k4 = f(V + dt*k3.dV, m + dt*k3.dm, h + dt*k3.dh, n + dt*k3.dn, I);
-
     return {
       V: V + (dt/6) * (k1.dV + 2*k2.dV + 2*k3.dV + k4.dV),
       m: m + (dt/6) * (k1.dm + 2*k2.dm + 2*k3.dm + k4.dm),
@@ -327,127 +410,176 @@ const HH = {
   }
 };
 
-// ========== Waveform Templates ==========
-const TEMPLATES = {
-  'staircase': {
-    period: 120,
-    fn: (t, mag) => {
-      const phase = t % 120;
-      if (phase < 30) return mag * 0.3;
-      if (phase < 60) return mag * 0.6;
-      if (phase < 90) return mag;
+// ========== Template Definitions (Scalable) ==========
+const TEMPLATE_DEFS = [
+  {
+    id: 'step',
+    name: 'Step',
+    params: [
+      { id: 'amp', label: 'Amplitude', min: 1, max: 100, default: 15, step: 1 }
+    ],
+    fn: (t, p) => p.amp
+  },
+  {
+    id: 'pulse',
+    name: 'Pulse',
+    params: [
+      { id: 'amp', label: 'Amplitude', min: 1, max: 100, default: 20, step: 1 },
+      { id: 'width', label: 'Width', min: 1, max: 50, default: 5, step: 1 },
+      { id: 'period', label: 'Period', min: 10, max: 200, default: 50, step: 5 }
+    ],
+    fn: (t, p) => (t % p.period) < p.width ? p.amp : 0
+  },
+  {
+    id: 'staircase',
+    name: 'Staircase',
+    params: [
+      { id: 'amp', label: 'Max Amp', min: 5, max: 100, default: 30, step: 1 },
+      { id: 'steps', label: 'Steps', min: 2, max: 6, default: 3, step: 1 },
+      { id: 'duration', label: 'Step Dur', min: 10, max: 100, default: 30, step: 5 }
+    ],
+    fn: (t, p) => {
+      const totalPeriod = p.steps * p.duration + p.duration;
+      const phase = t % totalPeriod;
+      const stepIdx = Math.floor(phase / p.duration);
+      if (stepIdx >= p.steps) return 0;
+      return p.amp * ((stepIdx + 1) / p.steps);
+    }
+  },
+  {
+    id: 'paired',
+    name: 'Paired Pulse',
+    params: [
+      { id: 'amp', label: 'Amplitude', min: 5, max: 100, default: 25, step: 1 },
+      { id: 'width', label: 'Width', min: 1, max: 20, default: 3, step: 1 },
+      { id: 'interval', label: 'Interval', min: 5, max: 100, default: 20, step: 1 },
+      { id: 'period', label: 'Period', min: 50, max: 300, default: 100, step: 10 }
+    ],
+    fn: (t, p) => {
+      const phase = t % p.period;
+      if (phase < p.width) return p.amp;
+      if (phase >= p.interval && phase < p.interval + p.width) return p.amp;
       return 0;
     }
   },
-  'paired': {
-    period: 80,
-    fn: (t, mag) => {
-      const phase = t % 80;
-      if (phase < 2) return mag;
-      if (phase >= 15 && phase < 17) return mag;
+  {
+    id: 'burst',
+    name: 'Burst',
+    params: [
+      { id: 'amp', label: 'Amplitude', min: 5, max: 100, default: 20, step: 1 },
+      { id: 'count', label: 'Count', min: 2, max: 10, default: 5, step: 1 },
+      { id: 'freq', label: 'Freq (Hz)', min: 20, max: 200, default: 100, step: 10 },
+      { id: 'period', label: 'Period', min: 50, max: 300, default: 120, step: 10 }
+    ],
+    fn: (t, p) => {
+      const phase = t % p.period;
+      const pulseInterval = 1000 / p.freq;
+      const burstDuration = p.count * pulseInterval;
+      if (phase >= burstDuration) return 0;
+      const subphase = phase % pulseInterval;
+      return subphase < 2 ? p.amp : 0;
+    }
+  },
+  {
+    id: 'ramp',
+    name: 'Ramp',
+    params: [
+      { id: 'amp', label: 'Max Amp', min: 5, max: 100, default: 25, step: 1 },
+      { id: 'rise', label: 'Rise', min: 5, max: 100, default: 30, step: 5 },
+      { id: 'hold', label: 'Hold', min: 0, max: 100, default: 20, step: 5 },
+      { id: 'fall', label: 'Fall', min: 5, max: 100, default: 30, step: 5 }
+    ],
+    fn: (t, p) => {
+      const period = p.rise + p.hold + p.fall + 20;
+      const phase = t % period;
+      if (phase < p.rise) return p.amp * (phase / p.rise);
+      if (phase < p.rise + p.hold) return p.amp;
+      if (phase < p.rise + p.hold + p.fall) return p.amp * (1 - (phase - p.rise - p.hold) / p.fall);
       return 0;
     }
   },
-  'burst': {
-    period: 100,
-    fn: (t, mag) => {
-      const phase = t % 100;
-      if (phase < 40) {
-        const subphase = phase % 8;
-        return subphase < 2 ? mag : 0;
-      }
-      return 0;
-    }
+  {
+    id: 'sine',
+    name: 'Sine',
+    params: [
+      { id: 'amp', label: 'Amplitude', min: 1, max: 50, default: 15, step: 1 },
+      { id: 'offset', label: 'DC Offset', min: 0, max: 50, default: 10, step: 1 },
+      { id: 'freq', label: 'Freq (Hz)', min: 5, max: 100, default: 20, step: 5 }
+    ],
+    fn: (t, p) => p.offset + p.amp * Math.sin(2 * Math.PI * p.freq * t / 1000)
   },
-  'ramp-hold': {
-    period: 100,
-    fn: (t, mag) => {
-      const phase = t % 100;
-      if (phase < 20) return (phase / 20) * mag;
-      if (phase < 60) return mag;
-      if (phase < 80) return mag * (1 - (phase - 60) / 20);
-      return 0;
-    }
+  {
+    id: 'modelock',
+    name: 'Mode Lock',
+    params: [
+      { id: 'dc', label: 'DC', min: 0, max: 50, default: 10, step: 1 },
+      { id: 'ac', label: 'AC Amp', min: 1, max: 30, default: 8, step: 1 },
+      { id: 'freq', label: 'Freq (Hz)', min: 5, max: 100, default: 30, step: 5 }
+    ],
+    fn: (t, p) => p.dc + p.ac * Math.sin(2 * Math.PI * p.freq * t / 1000)
   },
-  'sine-burst': {
-    period: 120,
-    fn: (t, mag) => {
-      const phase = t % 120;
-      if (phase < 80) return mag * 0.5 * (1 + Math.sin(2 * Math.PI * phase / 20));
-      return 0;
+  {
+    id: 'noise',
+    name: 'Noise',
+    params: [
+      { id: 'base', label: 'Baseline', min: 0, max: 30, default: 8, step: 1 },
+      { id: 'amp', label: 'Amplitude', min: 1, max: 30, default: 10, step: 1 }
+    ],
+    fn: (t, p) => {
+      // Pseudo-random noise using multiple sine waves
+      const n = Math.sin(t * 0.73) + Math.sin(t * 1.37) + Math.sin(t * 2.19) + Math.sin(t * 0.31);
+      return p.base + p.amp * (n / 4);
     }
-  },
-  'noise': {
-    period: 1,
-    fn: (t, mag) => mag * 0.5 * (1 + (Math.sin(t * 0.7) + Math.sin(t * 1.3) + Math.sin(t * 2.1)) / 3)
   }
-};
+];
 
-// ========== Waveform Injector ==========
-class WaveformInjector {
-  constructor() {
-    this.queue = [];
-    this.stepActive = false;
-    this.stepMag = 0;
-    this.activeTemplate = null;
-    this.templateMag = 0;
-  }
+// ========== Template State Manager ==========
+class TemplateManager {
+  constructor(defs) {
+    this.defs = defs;
+    this.states = {};
+    this.activeId = null;
 
-  toggleStep(mag) {
-    this.stepActive = !this.stepActive;
-    this.stepMag = this.stepActive ? mag : 0;
-    return this.stepActive;
+    // Initialize states with defaults
+    defs.forEach(def => {
+      this.states[def.id] = {};
+      def.params.forEach(param => {
+        this.states[def.id][param.id] = param.default;
+      });
+    });
   }
 
-  setTemplate(name, mag) {
-    this.activeTemplate = name;
-    this.templateMag = mag;
-    // Clear step when template is active
-    this.stepActive = false;
-    this.stepMag = 0;
-  }
-
-  clearTemplate() {
-    this.activeTemplate = null;
-    this.templateMag = 0;
-  }
-
-  inject(type, mag) {
-    const t0 = simTime;
-    switch (type) {
-      case 'pulse':
-        this.queue.push({ t0, duration: 2, fn: t => mag });
-        break;
-      case 'sine':
-        this.queue.push({ t0, duration: 50, fn: t => mag * Math.sin(2 * Math.PI * 0.05 * t) });
-        break;
-      case 'ramp':
-        this.queue.push({ t0, duration: 30, fn: t => (t / 30) * mag });
-        break;
+  setParam(templateId, paramId, value) {
+    if (this.states[templateId]) {
+      this.states[templateId][paramId] = value;
     }
+  }
+
+  getParams(templateId) {
+    return this.states[templateId] || {};
+  }
+
+  activate(templateId) {
+    this.activeId = templateId;
+  }
+
+  deactivate() {
+    this.activeId = null;
   }
 
   getValue(t) {
-    let sum = this.stepMag;
+    if (!this.activeId) return 0;
+    const def = this.defs.find(d => d.id === this.activeId);
+    if (!def) return 0;
+    return def.fn(t, this.states[this.activeId]);
+  }
 
-    // Add template value if active
-    if (this.activeTemplate && TEMPLATES[this.activeTemplate]) {
-      sum += TEMPLATES[this.activeTemplate].fn(t, this.templateMag);
-    }
-
-    // Add queued waveforms
-    this.queue = this.queue.filter(w => {
-      const elapsed = t - w.t0;
-      if (elapsed < 0) return true;
-      if (elapsed > w.duration) return false;
-      sum += w.fn(elapsed);
-      return true;
-    });
-    return sum;
+  isActive(templateId) {
+    return this.activeId === templateId;
   }
 }
 
-// ========== Renderer ==========
+// ========== Trace Renderer ==========
 class TraceRenderer {
   constructor(canvasId, color, yMin, yMax) {
     this.canvas = document.getElementById(canvasId);
@@ -457,20 +589,16 @@ class TraceRenderer {
     this.yMax = yMax;
     this.data = [];
     this.maxPoints = 800;
-    this.resize();
   }
 
   resize() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const h = 130;
     this.canvas.width = rect.width * dpr;
-    this.canvas.height = h * dpr;
-    this.canvas.style.width = rect.width + 'px';
-    this.canvas.style.height = h + 'px';
+    this.canvas.height = rect.height * dpr;
     this.ctx.scale(dpr, dpr);
     this.width = rect.width;
-    this.height = h;
+    this.height = rect.height;
   }
 
   push(value) {
@@ -483,7 +611,6 @@ class TraceRenderer {
     ctx.fillStyle = '#1e1e1e';
     ctx.fillRect(0, 0, width, height);
 
-    // Grid
     ctx.strokeStyle = '#2a2a2a';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
@@ -496,9 +623,8 @@ class TraceRenderer {
 
     if (data.length < 2) return;
 
-    // Trace
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     const step = width / this.maxPoints;
     for (let i = 0; i < data.length; i++) {
@@ -509,26 +635,133 @@ class TraceRenderer {
     }
     ctx.stroke();
 
-    // Y-axis labels
-    ctx.fillStyle = '#555';
-    ctx.font = '10px monospace';
-    ctx.fillText(yMax.toFixed(0), width - 35, 14);
-    ctx.fillText(yMin.toFixed(0), width - 35, height - 6);
+    ctx.fillStyle = '#444';
+    ctx.font = '9px monospace';
+    ctx.fillText(yMax.toFixed(0), width - 28, 10);
+    ctx.fillText(yMin.toFixed(0), width - 28, height - 3);
   }
 }
 
-// ========== Main ==========
+// ========== UI Generation ==========
+function createTemplateCard(def, manager, onActivate) {
+  const card = document.createElement('div');
+  card.className = 'template-card';
+  card.dataset.templateId = def.id;
+
+  // Preview canvas
+  const canvas = document.createElement('canvas');
+  canvas.className = 'preview-canvas';
+  canvas.width = 332;
+  canvas.height = 55;
+  card.appendChild(canvas);
+
+  // Name
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = def.name;
+  card.appendChild(name);
+
+  // Params container
+  const paramsDiv = document.createElement('div');
+  paramsDiv.className = 'params';
+
+  def.params.forEach(param => {
+    const paramDiv = document.createElement('div');
+    paramDiv.className = 'param';
+
+    const label = document.createElement('label');
+    label.textContent = param.label;
+    paramDiv.appendChild(label);
+
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = param.min;
+    input.max = param.max;
+    input.step = param.step;
+    input.value = param.default;
+    paramDiv.appendChild(input);
+
+    const val = document.createElement('span');
+    val.className = 'val';
+    val.textContent = param.default;
+    paramDiv.appendChild(val);
+
+    input.addEventListener('input', () => {
+      const v = parseFloat(input.value);
+      manager.setParam(def.id, param.id, v);
+      val.textContent = v;
+      drawPreview(canvas, def, manager.getParams(def.id));
+    });
+
+    paramsDiv.appendChild(paramDiv);
+  });
+
+  card.appendChild(paramsDiv);
+
+  // Activate button
+  const btn = document.createElement('button');
+  btn.className = 'activate-btn';
+  btn.textContent = 'Activate';
+  btn.addEventListener('click', () => onActivate(def.id));
+  card.appendChild(btn);
+
+  // Initial preview
+  drawPreview(canvas, def, manager.getParams(def.id));
+
+  return card;
+}
+
+function drawPreview(canvas, def, params) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fillRect(0, 0, w, h);
+
+  // Determine y scale
+  let maxVal = 1;
+  const samples = [];
+  for (let i = 0; i <= 100; i++) {
+    const t = (i / 100) * 200;
+    const v = def.fn(t, params);
+    samples.push(v);
+    if (Math.abs(v) > maxVal) maxVal = Math.abs(v);
+  }
+  maxVal *= 1.1;
+
+  ctx.strokeStyle = '#e91e63';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < samples.length; i++) {
+    const x = (i / samples.length) * w;
+    const y = h / 2 - (samples[i] / maxVal) * (h / 2 - 4);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Zero line
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, h / 2);
+  ctx.lineTo(w, h / 2);
+  ctx.stroke();
+}
+
+// ========== Main Application ==========
 let state = HH.initState();
 let simTime = 0;
 let isPlaying = true;
-let timeWindow = 548; // number of points to display (will be set by slider init)
 let manualI = 0;
-const dt = 0.05; // ms per simulation step
-let stepsPerFrame = 2; // simulation steps per frame
-const injector = new WaveformInjector();
+const dt = 0.05;
+let stepsPerFrame = 2;
+let timeWindow = 1414;
+
+const templateManager = new TemplateManager(TEMPLATE_DEFS);
 
 const traces = {
-  I: new TraceRenderer('canvas-I', '#e91e63', -25, 55),
+  I: new TraceRenderer('canvas-I', '#e91e63', -30, 80),
   V: new TraceRenderer('canvas-V', '#4caf50', -90, 60),
   m: new TraceRenderer('canvas-m', '#ff9800', 0, 1),
   h: new TraceRenderer('canvas-h', '#03a9f4', 0, 1),
@@ -543,25 +776,19 @@ const windowSlider = document.getElementById('window-slider');
 const windowValue = document.getElementById('window-value');
 const speedSlider = document.getElementById('speed-slider');
 const speedValue = document.getElementById('speed-value');
-const magSlider = document.getElementById('mag-slider');
-const magValue = document.getElementById('mag-value');
+const templateScroll = document.getElementById('template-scroll');
+const templateOffBtn = document.getElementById('template-off');
 
-let injectMag = 10;
-
+// Event listeners
 iSlider.addEventListener('input', () => {
   manualI = parseFloat(iSlider.value);
   iValue.textContent = manualI.toFixed(1);
 });
 
-magSlider.addEventListener('input', () => {
-  injectMag = parseFloat(magSlider.value);
-  magValue.textContent = injectMag.toFixed(0);
-});
-
 playBtn.addEventListener('click', () => {
   isPlaying = !isPlaying;
   playBtn.textContent = isPlaying ? '⏸' : '▶';
-  playBtn.classList.toggle('paused', !isPlaying);
+  playBtn.classList.toggle('playing', isPlaying);
 });
 
 const WINDOW_MIN = 100, WINDOW_MAX = 20000;
@@ -570,11 +797,9 @@ function sliderToWindow(val) {
 }
 windowSlider.addEventListener('input', () => {
   timeWindow = sliderToWindow(parseInt(windowSlider.value));
-  windowValue.textContent = timeWindow + ' pts';
-  // Update all traces' maxPoints
+  windowValue.textContent = timeWindow;
   Object.values(traces).forEach(t => {
     t.maxPoints = timeWindow;
-    // Trim data if needed
     while (t.data.length > timeWindow) t.data.shift();
   });
 });
@@ -582,108 +807,46 @@ timeWindow = sliderToWindow(50);
 
 speedSlider.addEventListener('input', () => {
   stepsPerFrame = parseInt(speedSlider.value);
-  speedValue.textContent = stepsPerFrame + ' steps/f';
+  speedValue.textContent = stepsPerFrame;
 });
 
-const injectButtons = document.getElementById('inject-buttons');
-document.querySelectorAll('.inject-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const wave = btn.dataset.wave;
-    if (wave === 'step') {
-      const active = injector.toggleStep(injectMag);
-      btn.classList.toggle('active', active);
-    } else {
-      injector.inject(wave, injectMag);
-    }
+// Create template cards
+function updateActiveCard(activeId) {
+  document.querySelectorAll('.template-card').forEach(card => {
+    const isActive = card.dataset.templateId === activeId;
+    card.classList.toggle('active', isActive);
   });
-});
-
-// ========== Template System ==========
-const clearTemplateBtn = document.getElementById('clear-template');
-const templateCards = document.querySelectorAll('.template-card');
-
-function setInjectButtonsDisabled(disabled) {
-  document.querySelectorAll('.inject-btn').forEach(btn => {
-    btn.disabled = disabled;
-    if (disabled) btn.classList.remove('active');
-  });
+  templateOffBtn.classList.toggle('active', activeId !== null);
 }
 
-function drawTemplatePreview(canvas, templateName) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  const template = TEMPLATES[templateName];
-  if (!template) return;
-
-  ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.strokeStyle = '#e91e63';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-
-  const period = template.period;
-  const samples = 60;
-  for (let i = 0; i <= samples; i++) {
-    const t = (i / samples) * period * 1.5;
-    const val = template.fn(t, 1);
-    const x = (i / samples) * w;
-    const y = h - 4 - val * (h - 8);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-}
-
-// Draw all template previews
-templateCards.forEach(card => {
-  const canvas = card.querySelector('.template-preview');
-  const templateName = card.dataset.template;
-  drawTemplatePreview(canvas, templateName);
-});
-
-// Template card click handler
-templateCards.forEach(card => {
-  card.addEventListener('click', () => {
-    const templateName = card.dataset.template;
-
-    // Clear previous selection
-    templateCards.forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
-
-    // Activate template
-    injector.setTemplate(templateName, injectMag);
-
-    // Disable inject buttons
-    setInjectButtonsDisabled(true);
-
-    // Show OFF button as active
-    clearTemplateBtn.classList.add('active');
+TEMPLATE_DEFS.forEach(def => {
+  const card = createTemplateCard(def, templateManager, (id) => {
+    templateManager.activate(id);
+    updateActiveCard(id);
   });
+  templateScroll.appendChild(card);
 });
 
-// Clear template button
-clearTemplateBtn.addEventListener('click', () => {
-  templateCards.forEach(c => c.classList.remove('active'));
-  injector.clearTemplate();
-  setInjectButtonsDisabled(false);
-  clearTemplateBtn.classList.remove('active');
+templateOffBtn.addEventListener('click', () => {
+  templateManager.deactivate();
+  updateActiveCard(null);
 });
 
-// Resize handler
-window.addEventListener('resize', () => {
+// Resize handling
+function handleResize() {
   Object.values(traces).forEach(t => t.resize());
-});
+}
+window.addEventListener('resize', handleResize);
+setTimeout(handleResize, 50);
 
 // Main loop
 function loop() {
   requestAnimationFrame(loop);
-
   if (!isPlaying) return;
 
-  // Steps per frame controls scroll speed
   for (let i = 0; i < stepsPerFrame; i++) {
-    const I_total = manualI + injector.getValue(simTime);
+    const templateI = templateManager.getValue(simTime);
+    const I_total = manualI + templateI;
     state = HH.step(state, I_total, dt);
     simTime += dt;
 
@@ -694,7 +857,6 @@ function loop() {
     traces.n.push(state.n);
   }
 
-  // Draw all traces
   Object.values(traces).forEach(t => t.draw());
 }
 
